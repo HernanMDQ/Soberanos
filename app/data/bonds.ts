@@ -241,11 +241,11 @@ export function getPayment(bond: Bond, date: string, nominal: number): number {
 
 export function getPaymentDetail(bond: Bond, date: string, nominal: number) {
   const coupon = bond.coupons.find(c => c.date === date)
-  if (!coupon || nominal === 0) return { total: 0, interest: null, amort: null }
+  if (!coupon || nominal === 0) return { total: 0, interest: 0, amort: 0 }
   return {
-    total: (nominal * coupon.rate) / 100,
-    interest: coupon.interest != null ? (nominal * coupon.interest) / 100 : null,
-    amort:    coupon.amort    != null ? (nominal * coupon.amort)    / 100 : null,
+    total:    (nominal * coupon.rate) / 100,
+    interest: coupon.interest != null ? (nominal * coupon.interest) / 100 : 0,
+    amort:    coupon.amort    != null ? (nominal * coupon.amort)    / 100 : 0,
   }
 }
 
