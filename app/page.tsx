@@ -78,6 +78,9 @@ export default function Home() {
 
   const [preciosCargando, setPreciosCargando] = useState(true)
   const [desglose, setDesglose] = useState(false)
+  const [montosStr, setMontosStr] = useState<Record<BondId, string>>(
+    Object.fromEntries(BONDS.map(b => [b.id, ''])) as Record<BondId, string>
+  )
 
   useEffect(() => {
     fetch('/api/precios')
@@ -117,6 +120,43 @@ export default function Home() {
     setPreciosStr(p => ({ ...p, [bondId]: raw }))
     const num = parseFloat(raw.replace(',', '.'))
     if (!isNaN(num) && num >= 0) setPrecios(p => ({ ...p, [bondId]: num }))
+  }
+
+  function handleMontoChange(e: React.ChangeEvent<HTMLInputElement>, bondId: BondId) {
+    const raw = e.target.value.replace(',', '.')
+    setMontosStr(p => ({ ...p, [bondId]: e.target.value }))
+    const monto = parseFloat(raw)
+    if (!isNaN(monto) && monto >= 0 && precios[bondId] > 0) {
+      const nom = Math.round((monto * 100) / precios[bondId])
+      setNominales(n => ({ ...n, [bondId]: nom }))
+    }
+  }
+
+  function handleMontoKeyDown(e: React.KeyboardEvent<HTMLInputElement>, bondId: BondId) {
+    if (e.key !== '.') return
+    e.preventDefault()
+    const input = e.currentTarget
+    const s = input.selectionStart ?? input.value.length
+    const end = input.selectionEnd ?? input.value.length
+    const cur = montosStr[bondId] ?? ''
+    const newVal = cur.slice(0, s) + ',' + cur.slice(end)
+    setMontosStr(p => ({ ...p, [bondId]: newVal }))
+    const monto = parseFloat(newVal.replace(',', '.'))
+    if (!isNaN(monto) && precios[bondId] > 0) {
+      setNominales(n => ({ ...n, [bondId]: Math.round((monto * 100) / precios[bondId]) }))
+    }
+    setTimeout(() => input.setSelectionRange(s + 1, s + 1), 0)
+  }
+
+  function handleNominalChange(e: React.ChangeEvent<HTMLInputElement>, bondId: BondId) {
+    const nom = parseInt(e.target.value) || 0
+    setNominales(n => ({ ...n, [bondId]: nom }))
+    if (nom > 0 && precios[bondId] > 0) {
+      const monto = (precios[bondId] * nom) / 100
+      setMontosStr(p => ({ ...p, [bondId]: monto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }))
+    } else {
+      setMontosStr(p => ({ ...p, [bondId]: '' }))
+    }
   }
 
   const allDates = useMemo(() => getAllDates(), [])
@@ -264,6 +304,22 @@ const resumenAnual = useMemo(() => {
                   ))}
                 </tr>
                 <tr>
+                  <td className="pr-4 py-1 text-zinc-500 whitespace-nowrap">Monto (u$)</td>
+                  {BONDS.map(bond => (
+                    <td key={bond.id} className="px-2 py-1">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={montosStr[bond.id]}
+                        placeholder="0,00"
+                        onKeyDown={e => handleMontoKeyDown(e, bond.id)}
+                        onChange={e => handleMontoChange(e, bond.id)}
+                        className="w-full min-w-[72px] bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white text-right focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
                   <td className="pr-4 py-1 text-zinc-500 whitespace-nowrap">Nominales</td>
                   {BONDS.map(bond => (
                     <td key={bond.id} className="px-2 py-1">
@@ -273,19 +329,9 @@ const resumenAnual = useMemo(() => {
                         min="0"
                         value={nominales[bond.id] || ''}
                         placeholder="0"
-                        onChange={e => setNominales(n => ({ ...n, [bond.id]: parseInt(e.target.value) || 0 }))}
+                        onChange={e => handleNominalChange(e, bond.id)}
                         className="w-full min-w-[72px] bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white text-right focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       />
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="pr-4 py-1 text-zinc-600 whitespace-nowrap">Invertido</td>
-                  {BONDS.map(bond => (
-                    <td key={bond.id} className="px-2 py-1 text-right text-zinc-400 tabular-nums whitespace-nowrap">
-                      {precios[bond.id] && nominales[bond.id]
-                        ? fmtDecimal((precios[bond.id] * nominales[bond.id]) / 100)
-                        : <span className="text-zinc-700">—</span>}
                     </td>
                   ))}
                 </tr>
