@@ -125,6 +125,10 @@ export default function Home() {
   function handleMontoChange(e: React.ChangeEvent<HTMLInputElement>, bondId: BondId) {
     const raw = e.target.value.replace(',', '.')
     setMontosStr(p => ({ ...p, [bondId]: e.target.value }))
+    if (e.target.value === '') {
+      setNominales(n => ({ ...n, [bondId]: 0 }))
+      return
+    }
     const monto = parseFloat(raw)
     if (!isNaN(monto) && monto >= 0 && precios[bondId] > 0) {
       const nom = Math.round((monto * 100) / precios[bondId])
@@ -149,6 +153,11 @@ export default function Home() {
   }
 
   function handleNominalChange(e: React.ChangeEvent<HTMLInputElement>, bondId: BondId) {
+    if (e.target.value === '') {
+      setNominales(n => ({ ...n, [bondId]: 0 }))
+      setMontosStr(p => ({ ...p, [bondId]: '' }))
+      return
+    }
     const nom = parseInt(e.target.value) || 0
     setNominales(n => ({ ...n, [bondId]: nom }))
     if (nom > 0 && precios[bondId] > 0) {
