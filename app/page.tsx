@@ -78,6 +78,8 @@ export default function Home() {
 
   const [preciosCargando, setPreciosCargando] = useState(true)
   const [desglose, setDesglose] = useState(false)
+  const [showAmort, setShowAmort] = useState(true)
+  const [showInt, setShowInt] = useState(true)
   const [montosStr, setMontosStr] = useState<Record<BondId, string>>(
     Object.fromEntries(BONDS.map(b => [b.id, ''])) as Record<BondId, string>
   )
@@ -394,15 +396,19 @@ const resumenAnual = useMemo(() => {
                 <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest">
                   Flujo anual
                 </h2>
-                <div className="flex items-center gap-4 text-xs text-zinc-400">
-                  <span className="flex items-center gap-1.5">
+                <div className="flex items-center gap-4 text-xs">
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" checked={showAmort} onChange={e => setShowAmort(e.target.checked)}
+                      className="w-3.5 h-3.5 accent-emerald-300 cursor-pointer" />
                     <span className="inline-block w-3 h-3 rounded-sm bg-[#6ee7b7]" />
-                    <span className="text-emerald-300">Amortización</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
+                    <span className={showAmort ? 'text-emerald-300' : 'text-zinc-600'}>Amortización</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" checked={showInt} onChange={e => setShowInt(e.target.checked)}
+                      className="w-3.5 h-3.5 accent-emerald-700 cursor-pointer" />
                     <span className="inline-block w-3 h-3 rounded-sm bg-[#065f46]" />
-                    <span className="text-emerald-600">Intereses</span>
-                  </span>
+                    <span className={showInt ? 'text-emerald-600' : 'text-zinc-600'}>Intereses</span>
+                  </label>
                 </div>
               </div>
               {(() => {
@@ -410,7 +416,9 @@ const resumenAnual = useMemo(() => {
                 const W = 800, H = 230
                 const plotW = W - padL - padR
                 const plotH = H - padT - padB
-                const maxVal = Math.max(...resumenAnual.map(r => r.total))
+                const maxVal = Math.max(...resumenAnual.map(r =>
+                  (showAmort ? r.amort : 0) + (showInt ? r.interest : 0)
+                ))
                 const n = resumenAnual.length
                 const slotW = plotW / n
                 const barW = Math.max(10, slotW * 0.55)
@@ -434,33 +442,32 @@ const resumenAnual = useMemo(() => {
                     })}
 
                     {/* Bars apiladas: amort (abajo, verde claro) + interés (arriba, verde oscuro) */}
-                    {resumenAnual.map(({ year, total, interest, amort }, i) => {
+                    {resumenAnual.map(({ year, interest, amort }, i) => {
                       const isBreakEven = year === breakEvenYear
                       const x = padL + slotW * i + slotW / 2 - barW / 2
                       const baseY = padT + plotH
-                      const amortH = maxVal > 0 ? (amort / maxVal) * plotH : 0
-                      const intH = maxVal > 0 ? (interest / maxVal) * plotH : 0
+                      const amortH = maxVal > 0 && showAmort ? (amort / maxVal) * plotH : 0
+                      const intH = maxVal > 0 && showInt ? (interest / maxVal) * plotH : 0
                       const totalH = amortH + intH
-                      const amortFill = '#6ee7b7'
-                      const intFill = '#065f46'
+                      const visibleTotal = (showAmort ? amort : 0) + (showInt ? interest : 0)
                       return (
                         <g key={year}>
                           {/* Segmento amortización (abajo) */}
                           {amortH > 0 && (
                             <rect x={x} y={baseY - amortH} width={barW} height={amortH}
-                              fill={amortFill} rx="0"
+                              fill="#6ee7b7" rx="0"
                             />
                           )}
                           {/* Segmento intereses (arriba) */}
                           {intH > 0 && (
                             <rect x={x} y={baseY - amortH - intH} width={barW} height={intH}
-                              fill={intFill} rx="0"
+                              fill="#065f46" rx="0"
                             />
                           )}
                           {/* Bordes redondeados solo arriba */}
                           {totalH > 0 && (
                             <rect x={x} y={baseY - totalH} width={barW} height={4}
-                              fill={intH > 0 ? intFill : amortFill} rx="2"
+                              fill={intH > 0 ? '#065f46' : '#6ee7b7'} rx="2"
                             />
                           )}
                           {/* Año */}
@@ -471,9 +478,9 @@ const resumenAnual = useMemo(() => {
                             {isBreakEven ? `★ ${year}` : year}
                           </text>
                           {/* Valor total encima */}
-                          {total > 0 && (
+                          {visibleTotal > 0 && (
                             <text x={x + barW / 2} y={baseY - totalH - 5} textAnchor="middle" fontSize="10" fill="#a1a1aa">
-                              {fmtAxis(total)}
+                              {fmtAxis(visibleTotal)}
                             </text>
                           )}
                         </g>
