@@ -5,6 +5,7 @@ import type { BondId } from '@/app/data/bonds'
 const BONISTAS_TICKERS: Record<BondId, string[]> = {
   AO27: ['AO27D', 'AO27'],
   AO28: ['AO28D', 'AO28'],
+  AO29: ['AO29D', 'AO29'],
   AN29: ['AN29D', 'AN29'],
   AL29: ['AL29D', 'AL29'],
   AL30: ['AL30D', 'AL30'],
@@ -15,6 +16,7 @@ const BONISTAS_TICKERS: Record<BondId, string[]> = {
 
 const YAHOO_TICKERS: Partial<Record<BondId, string>> = {
   AO28: 'AO28D.BA',
+  AO29: 'AO29D.BA',
 }
 
 async function fetchYahoo(ticker: string): Promise<number | null> {

@@ -7,7 +7,7 @@ type Nominales = Record<BondId, number>
 type Precios = Record<BondId, number>
 
 const DEFAULT_NOMINALES: Nominales = {
-  AO27: 0, AO28: 0, AN29: 0, AL29: 0, AL30: 0, AL35: 0, AE38: 0, AL41: 0,
+  AO27: 0, AO28: 0, AO29: 0, AN29: 0, AL29: 0, AL30: 0, AL35: 0, AE38: 0, AL41: 0,
 }
 
 // XIRR: TIR con fechas irregulares via Newton-Raphson
