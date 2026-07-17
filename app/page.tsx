@@ -88,18 +88,20 @@ export default function Home() {
     fetch('/api/precios')
       .then(r => r.json())
       .then((data: Partial<Record<BondId, number>>) => {
-        if (Object.keys(data).length === 0) return
-        setPrecios(p => ({ ...p, ...data }))
-        setPreciosStr(p => {
-          const updated = { ...p }
-          Object.entries(data).forEach(([id, price]) => {
-            if (price != null)
-              updated[id as BondId] = String(price).replace('.', ',')
-          })
-          return updated
-        })
+        // Bono sin precio actualizado → 0, para detectar a simple vista qué falló
+        setPrecios(
+          Object.fromEntries(BONDS.map(b => [b.id, data[b.id] ?? 0])) as Precios
+        )
+        setPreciosStr(
+          Object.fromEntries(
+            BONDS.map(b => [b.id, String(data[b.id] ?? 0).replace('.', ',')])
+          ) as Record<BondId, string>
+        )
       })
-      .catch(() => {})
+      .catch(() => {
+        setPrecios(Object.fromEntries(BONDS.map(b => [b.id, 0])) as Precios)
+        setPreciosStr(Object.fromEntries(BONDS.map(b => [b.id, '0'])) as Record<BondId, string>)
+      })
       .finally(() => setPreciosCargando(false))
   }, [])
 

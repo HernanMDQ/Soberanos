@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { BondId } from '@/app/data/bonds'
 
-// Tickers en bonistas.com (AO28 no está listado aún, se obtiene de Yahoo Finance)
+// Tickers en bonistas.com
 const BONISTAS_TICKERS: Record<BondId, string[]> = {
   AO27: ['AO27D', 'AO27'],
-  AO28: [],
+  AO28: ['AO28D', 'AO28'],
   AN29: ['AN29D', 'AN29'],
   AL29: ['AL29D', 'AL29'],
   AL30: ['AL30D', 'AL30'],
@@ -42,21 +42,16 @@ function toUsd(instrument: any): number | null {
 
 export async function GET() {
   try {
-    const res = await fetch('https://bonistas.com', {
-      headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
+    const res = await fetch('https://bonistas.com/api/bonds', {
+      headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' },
       next: { revalidate: 300 },
       signal: AbortSignal.timeout(8000),
     })
 
     if (!res.ok) throw new Error(`bonistas.com respondió ${res.status}`)
 
-    const html = await res.text()
-    const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
-    if (!match) throw new Error('No se encontró __NEXT_DATA__')
-
-    const nextData = JSON.parse(match[1])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const bondData: any[] = nextData?.props?.pageProps?.bondData ?? []
+    const bondData: any[] = await res.json()
 
     // Indexar por ticker para búsqueda rápida
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
